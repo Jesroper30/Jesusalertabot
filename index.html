@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="P2P Tracker">
+<title>P2P Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js"></script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b0e11;
+  --bg-2: #161a1e;
+  --bg-3: #1e2329;
+  --border: #2b3139;
+  --text: #eaecef;
+  --text-2: #b7bdc6;
+  --text-3: #848e9c;
+  --green: #02c076;
+  --green-2: #0ecb81;
+  --red: #f6465d;
+  --gold: #f0b90b;
+  --gold-2: #fcd535;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg); color: var(--text);
+  padding: 12px 12px calc(80px + env(safe-area-inset-bottom)) 12px;
+  font-size: 14px; line-height: 1.4; min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 720px; margin: 0 auto; }
+
+.header { display: flex; align-items: center; gap: 10px; padding: 4px 0 16px; }
+.logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--gold) 0%, var(--gold-2) 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; color: #0b0e11; }
+.header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.header .sub { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
+.card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 10px; }
+.card-title { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: var(--text); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.badge { background: var(--bg-3); color: var(--text-2); font-size: 10px; padding: 3px 8px; border-radius: 6px; font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
+.badge.gold { background: rgba(240,185,11,0.15); color: var(--gold); }
+.badge.green { background: rgba(2,192,118,0.15); color: var(--green); }
+
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.kpi { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.kpi-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500; }
+.kpi-value { font-size: 19px; font-weight: 700; margin-top: 4px; color: var(--text); letter-spacing: -0.3px; }
+.kpi-value.green { color: var(--green); }
+.kpi-value.red { color: var(--red); }
+.kpi-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+label { font-size: 11px; color: var(--text-2); display: block; margin-bottom: 6px; font-weight: 500; }
+.help { font-size: 10px; color: var(--text-3); margin-top: 4px; }
+input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg-3); color: var(--text); font-family: inherit; -webkit-appearance: none; appearance: none; }
+input:focus, select:focus { outline: none; border-color: var(--gold); }
+input::placeholder { color: var(--text-3); }
+select { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23848e9c' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+button { width: 100%; padding: 14px; background: var(--gold); color: #0b0e11; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; font-family: inherit; letter-spacing: -0.2px; transition: all 0.15s; }
+button:active { transform: scale(0.98); background: var(--gold-2); }
+button.secondary { background: var(--bg-3); color: var(--text); border: 1px solid var(--border); }
+button.success { background: var(--green); color: white; }
+button.success:active { background: var(--green-2); }
+button.danger { background: transparent; color: var(--red); border: 1px solid var(--red); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Navegación inferior tipo app */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg-2); border-top: 1px solid var(--border);
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom)) 4px;
+  z-index: 100;
+}
+.nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 4px; cursor: pointer;
+  color: var(--text-3); font-size: 10px; font-weight: 500;
+  border-radius: 8px;
+}
+.nav-item.active { color: var(--gold); }
+.nav-item .icon { font-size: 20px; line-height: 1; }
+
+/* Selector de cripto */
+.crypto-selector {
+  display: flex; gap: 6px; overflow-x: auto;
+  padding: 8px 0; margin-bottom: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.crypto-chip {
+  flex-shrink: 0; padding: 8px 14px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; color: var(--text-2);
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+.crypto-chip.active { background: var(--gold); color: #0b0e11; border-color: var(--gold); }
+.crypto-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.crypto-chip.add { color: var(--gold); border-style: dashed; }
+
+.compra-list, .lote-list { max-height: 340px; overflow-y: auto; margin: -4px; padding: 4px; }
+.compra-item { padding: 12px; margin-bottom: 6px; background: var(--bg-3); border-radius: 10px; display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.compra-main { font-size: 14px; font-weight: 600; color: var(--text); }
+.compra-detail { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+.compra-actions { font-size: 11px; text-align: right; align-self: center; }
+.compra-actions a { color: var(--red); cursor: pointer; opacity: 0.8; }
+
+.empty { text-align: center; color: var(--text-3); padding: 24px 12px; font-size: 13px; }
+.export-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+canvas { max-height: 220px; }
+
+.lote-card { background: linear-gradient(135deg, #1e1a0a 0%, #2a2410 50%, #1a1a1a 100%); border: 1px solid rgba(240,185,11,0.3); position: relative; overflow: hidden; }
+.lote-card::before { content: ''; position: absolute; top: 0; right: 0; width: 200px; height: 200px; background: radial-gradient(circle, rgba(240,185,11,0.12) 0%, transparent 70%); pointer-events: none; }
+.lote-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; position: relative; }
+.lote-item .label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 500; }
+.lote-item .value { font-size: 18px; font-weight: 700; margin-top: 3px; color: var(--text); letter-spacing: -0.3px; }
+.lote-item .value.gold { color: var(--gold); }
+
+.alerta-rent { padding: 12px 14px; border-radius: 10px; margin: 12px 0; font-size: 13px; background: rgba(240,185,11,0.08); border: 1px solid rgba(240,185,11,0.25); color: var(--gold); }
+.alerta-rent.ok { background: rgba(2,192,118,0.08); border-color: rgba(2,192,118,0.3); color: var(--green); }
+.alerta-rent.bad { background: rgba(246,70,93,0.08); border-color: rgba(246,70,93,0.3); color: var(--red); }
+.alerta-rent .text { color: var(--text-2); font-weight: 400; }
+.alerta-rent .neta { color: var(--text); font-size: 17px; font-weight: 700; margin-top: 6px; letter-spacing: -0.3px; }
+
+.precio-min { background: rgba(0,0,0,0.35); border: 1px solid rgba(240,185,11,0.2); padding: 12px; border-radius: 10px; margin: 8px 0 0; font-size: 12px; text-align: center; color: var(--text-2); }
+.precio-min b { color: var(--gold); font-size: 16px; font-weight: 700; }
+
+.com-box { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 10px; margin-top: 8px; font-size: 12px; }
+.com-box .label-top { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; font-weight: 500; }
+.com-row { display: flex; justify-content: space-between; padding: 4px 0; color: var(--text-2); }
+.com-row b { color: var(--text); font-weight: 600; }
+.com-total { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+.com-total b { color: var(--gold); }
+
+.dia-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; }
+.dia-btn { flex-shrink: 0; padding: 10px 14px; background: var(--bg-3); border: 1px solid var(--border); border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-2); font-family: inherit; text-align: center; min-width: 70px; }
+.dia-btn.active { background: var(--gold); color: #0b0e11; border-color: var(--gold); }
+.dia-btn small { display: block; font-size: 10px; opacity: 0.85; margin-top: 2px; font-weight: 500; }
+
+.lote-cerrado { border: 1px solid var(--border); border-left: 3px solid var(--green); padding: 12px; margin-bottom: 8px; background: var(--bg-3); border-radius: 10px; }
+.lote-cerrado.neg { border-left-color: var(--red); }
+.lote-cerrado .header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-2); }
+.lote-cerrado .gan { color: var(--green); font-size: 14px; font-weight: 700; }
+.lote-cerrado .gan.neg { color: var(--red); }
+.lote-cerrado .det { font-size: 11px; color: var(--text-3); line-height: 1.6; }
+.lote-cerrado .det b { color: var(--text-2); font-weight: 600; }
+.lote-cerrado .borrar { color: var(--red); cursor: pointer; font-size: 11px; opacity: 0.7; }
+
+.dia-resumen { background: var(--bg-3); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+.dia-resumen-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; color: var(--text-2); }
+.dia-resumen-row b { color: var(--text); font-weight: 600; }
+.dia-resumen-row.total { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; font-size: 13px; }
+
+.config-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.config-row:last-child { border-bottom: none; }
+.config-row label { margin: 0; font-size: 13px; color: var(--text); }
+.config-row input, .config-row select { width: 130px; padding: 10px; font-size: 14px; }
+
+.warn-box { background: rgba(240,185,11,0.08); border: 1px solid rgba(240,185,11,0.25); padding: 12px; border-radius: 10px; font-size: 12px; color: var(--gold-2); margin-bottom: 10px; line-height: 1.5; }
+.info-text { font-size: 13px; line-height: 1.7; color: var(--text-2); }
+.info-text b { color: var(--text); }
+.info-text u { color: var(--gold); text-decoration: none; font-weight: 600; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+.modal-overlay.active { display: flex; }
+.modal { background: var(--bg-2); border: 1px solid var(--border); border-radius: 16px; padding: 20px; max-width: 400px; width: 100%; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+
+.tag-exchange { display: inline-block; background: var(--bg-3); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; font-size: 10px; color: var(--text-2); margin-left: 4px; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <div class="logo">P</div>
+  <div>
+    <h1>P2P Tracker</h1>
+    <div class="sub">Control de operaciones P2P</div>
+  </div>
+</div>
+
+<!-- Selector de criptomoneda activa -->
+<div class="crypto-selector" id="crypto-selector"></div>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-label">Hoy</div><div class="kpi-value green" id="kpi-today">$0</div><div class="kpi-sub" id="kpi-today-ops">0 lotes</div></div>
+  <div class="kpi"><div class="kpi-label">Semana</div><div class="kpi-value green" id="kpi-week">$0</div><div class="kpi-sub" id="kpi-week-ops">Lun-Sáb</div></div>
+  <div class="kpi"><div class="kpi-label">Mes</div><div class="kpi-value green" id="kpi-month">$0</div><div class="kpi-sub" id="kpi-month-ops">0 lotes</div></div>
+  <div class="kpi"><div class="kpi-label">Rentab. prom.</div><div class="kpi-value" id="kpi-rent">0%</div><div class="kpi-sub">por lote</div></div>
+</div>
+
+<!-- TAB: LOTE -->
+<div id="tab-lote" class="tab-content">
+  <div class="card lote-card">
+    <div class="card-title">Lote en curso <span class="badge gold" id="lote-fecha">—</span></div>
+    <div class="lote-grid">
+      <div class="lote-item"><div class="label">Compras</div><div class="value" id="lote-num">0</div></div>
+      <div class="lote-item"><div class="label"><span id="lote-cripto-label">USDT</span></div><div class="value gold" id="lote-usdt">0</div></div>
+      <div class="lote-item"><div class="label">Inversión</div><div class="value" id="lote-inv">$0</div></div>
+      <div class="lote-item"><div class="label">Precio promedio</div><div class="value" id="lote-promedio">—</div></div>
+      <div class="lote-item"><div class="label">Comisión exchange</div><div class="value" id="lote-binance">$0</div></div>
+      <div class="lote-item"><div class="label">Costo / unidad</div><div class="value" id="lote-costo-unit">—</div></div>
+    </div>
+    <div class="precio-min">Precio mínimo de venta para <b id="meta-rent-display">1.5%</b><br><b id="lote-precio-min" style="font-size:20px">—</b></div>
+    <div class="com-box">
+      <div class="label-top">Comisiones acumuladas</div>
+      <div class="com-row"><span>Exchange</span><b id="lote-com-binance">$0</b></div>
+      <div class="com-row"><span>Impuesto venta (estimado)</span><b id="lote-com-4x1000">$0</b></div>
+      <div class="com-row com-total"><span>Total</span><b id="lote-com-total">$0</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">1. Registrar compra <span class="badge">Paso 1</span></div>
+    <div class="form-row">
+      <div><label>Cantidad comprada</label><input type="number" id="c-cantidad" inputmode="decimal" placeholder="300" step="any"></div>
+      <div><label>Precio unitario</label><input type="number" id="c-precio" inputmode="decimal" placeholder="3950" step="any"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Comisión exchange</label><input type="number" id="c-binance" inputmode="decimal" placeholder="0" step="any" value="0"></div>
+      <div><label>Unidad comisión</label><select id="c-binance-unit"><option value="COP">Moneda fiat</option><option value="USDT">Cripto</option></select></div>
+    </div>
+    <div class="form-row">
+      <div><label>Exchange</label><input type="text" id="c-exchange" placeholder="Binance, Bybit, OKX..." list="exchanges-list"></div>
+      <div><label>Nota (opcional)</label><input type="text" id="c-nota" placeholder="Referencia"></div>
+    </div>
+    <datalist id="exchanges-list">
+      <option value="Binance"><option value="Bybit"><option value="OKX"><option value="KuCoin"><option value="Bitget"><option value="HTX"><option value="MEXC">
+    </datalist>
+    <button onclick="agregarCompra()">+ Agregar al lote</button>
+    <button class="secondary" onclick="document.getElementById('csv-input').click()" style="margin-top:6px">📥 Importar CSV (Binance P2P)</button>
+    <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="importarCSVBinance(event)">
+    <div class="help" style="text-align:center;margin-top:4px">Exporta tu historial P2P desde Binance y súbelo aquí</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Compras del lote <span class="badge" id="lote-count-badge">0</span></div>
+    <div class="compra-list" id="compras-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">2. Registrar venta <span class="badge green">Paso 2</span></div>
+    <div class="form-row">
+      <div><label>Precio venta unitario</label><input type="number" id="v-precio" inputmode="decimal" placeholder="4050" step="any" oninput="previewVenta()"></div>
+      <div><label>Cantidad a vender</label><input type="number" id="v-cantidad" inputmode="decimal" placeholder="todos" step="any" oninput="previewVenta()"></div>
+    </div>
+    <div id="venta-preview"></div>
+    <button class="success" onclick="cerrarLote()" id="btn-cerrar">Cerrar lote (vendido)</button>
+  </div>
+
+  <button class="danger" onclick="cancelarLote()">Cancelar lote</button>
+</div>
+
+<!-- TAB: POR DIA -->
+<div id="tab-dias" class="tab-content" style="display:none">
+  <div class="card">
+    <div class="card-title">Vista por día <span class="badge" id="semana-label"></span></div>
+    <div class="dia-tabs" id="dia-tabs"></div>
+    <div class="dia-resumen" id="dia-resumen"></div>
+    <div id="dia-lotes"></div>
+  </div>
+</div>
+
+<!-- TAB: HISTORIAL -->
+<div id="tab-historial" class="tab-content" style="display:none">
+  <div class="card">
+    <div class="card-title">Lotes cerrados</div>
+    <div class="lote-list" id="historial-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Por exchange</div>
+    <div id="resumen-exchanges"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Respaldo</div>
+    <div class="warn-box">⚠️ Los datos viven en este dispositivo. Exporta backup cada semana.</div>
+    <div class="export-row">
+      <button class="secondary" onclick="exportarBackup()">Backup completo</button>
+      <button class="secondary" onclick="document.getElementById('import-input').click()">Restaurar</button>
+    </div>
+    <input type="file" id="import-input" accept=".json" style="display:none" onchange="importarBackup(event)">
+    <div class="export-row" style="margin-top:8px">
+      <button class="secondary" onclick="exportarCSV()">Exportar CSV</button>
+      <button class="danger" onclick="resetearTodo()">Borrar todo</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: GRAFICA -->
+<div id="tab-grafica" class="tab-content" style="display:none">
+  <div class="card"><div class="card-title">Esta semana <span class="badge gold">Lun-Sáb</span></div><canvas id="chart-semana"></canvas></div>
+  <div class="card"><div class="card-title">Resumen total</div><div id="resumen-total" class="info-text"></div></div>
+</div>
+
+<!-- TAB: CONFIG -->
+<div id="tab-config" class="tab-content" style="display:none">
+  <div class="card">
+    <div class="card-title">Configuración</div>
+    <div class="config-row"><label>Rentabilidad mínima (%)</label><input type="number" id="cfg-rent" step="0.1" oninput="guardarConfig()"></div>
+    <div class="config-row"><label>Impuesto sobre venta</label><input type="number" id="cfg-4x1000" step="0.0001" oninput="guardarConfig()"></div>
+    <div class="config-row"><label>Comisión exchange por defecto (%)</label><input type="number" id="cfg-comision-default" step="0.01" oninput="guardarConfig()"></div>
+    <div class="config-row"><label>Símbolo de moneda fiat</label><input type="text" id="cfg-moneda" maxlength="5" oninput="guardarConfig()"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Mis criptos</div>
+    <div id="lista-criptos"></div>
+    <button class="secondary" onclick="abrirModalCripto()">+ Agregar cripto</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Cómo funciona</div>
+    <div class="info-text">
+      <b>1.</b> Elige la cripto que vas a operar (USDT, BTC, ETH, etc.)<br>
+      <b>2.</b> Registras cada compra: cantidad + precio + comisión + exchange.<br>
+      <b>3.</b> Te muestra el precio mínimo de venta para llegar a tu objetivo de rentabilidad.<br>
+      <b>4.</b> Registras la venta y se cierra el lote, queda guardado por día.<br>
+      <b>5.</b> Cada cripto y exchange se trackea por separado.<br><br>
+      <b>📥 Importación automática:</b> En Binance → Más → Pedidos → P2P → Exporta tu historial. Súbelo aquí y se llenan los datos con decimales exactos.
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Modal agregar cripto -->
+<div class="modal-overlay" id="modal-cripto">
+  <div class="modal">
+    <div class="modal-title">Agregar criptomoneda</div>
+    <label>Símbolo (ej: BTC, ETH, USDC)</label>
+    <input type="text" id="nueva-cripto" maxlength="10" style="text-transform:uppercase">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:12px">
+      <button class="secondary" onclick="cerrarModal()">Cancelar</button>
+      <button onclick="agregarCripto()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Navegación inferior -->
+<nav class="bottom-nav">
+  <div class="nav-item active" data-tab="lote"><div class="icon">💼</div><div>Lote</div></div>
+  <div class="nav-item" data-tab="dias"><div class="icon">📅</div><div>Días</div></div>
+  <div class="nav-item" data-tab="historial"><div class="icon">📊</div><div>Historial</div></div>
+  <div class="nav-item" data-tab="grafica"><div class="icon">📈</div><div>Gráfica</div></div>
+  <div class="nav-item" data-tab="config"><div class="icon">⚙️</div><div>Ajustes</div></div>
+</nav>
+
+<script>
+const STORAGE_KEY = 'p2p_lotes_v4';
+const CONFIG_KEY = 'p2p_config_v4';
+const CRIPTOS_KEY = 'p2p_criptos_v4';
+const CRIPTO_ACTIVA_KEY = 'p2p_cripto_activa_v4';
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DIAS_CORTOS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+let chart = null;
+let diaSeleccionado = null;
+let criptoActiva = 'USDT';
+
+// === CONFIG ===
+function cargarConfig() { try { const c = JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; return { rentMin: c.rentMin ?? 1.5, tasa4x1000: c.tasa4x1000 ?? 0.004, comisionDefault: c.comisionDefault ?? 0, moneda: c.moneda ?? 'COP' }; } catch { return { rentMin: 1.5, tasa4x1000: 0.004, comisionDefault: 0, moneda: 'COP' }; } }
+function guardarConfig() {
+  const cfg = { rentMin: parseFloat(document.getElementById('cfg-rent').value) || 1.5, tasa4x1000: parseFloat(document.getElementById('cfg-4x1000').value) || 0, comisionDefault: parseFloat(document.getElementById('cfg-comision-default').value) || 0, moneda: (document.getElementById('cfg-moneda').value || 'COP').toUpperCase() };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+  actualizar();
+}
+
+// === CRIPTOS ===
+function cargarCriptos() { try { const c = JSON.parse(localStorage.getItem(CRIPTOS_KEY)); return c && c.length ? c : ['USDT']; } catch { return ['USDT']; } }
+function guardarCriptos(arr) { localStorage.setItem(CRIPTOS_KEY, JSON.stringify(arr)); }
+function setCriptoActiva(c) { criptoActiva = c; localStorage.setItem(CRIPTO_ACTIVA_KEY, c); actualizar(); }
+function cargarCriptoActiva() { criptoActiva = localStorage.getItem(CRIPTO_ACTIVA_KEY) || cargarCriptos()[0] || 'USDT'; }
+
+function abrirModalCripto() { document.getElementById('nueva-cripto').value = ''; document.getElementById('modal-cripto').classList.add('active'); setTimeout(()=>document.getElementById('nueva-cripto').focus(),100); }
+function cerrarModal() { document.getElementById('modal-cripto').classList.remove('active'); }
+function agregarCripto() {
+  const v = (document.getElementById('nueva-cripto').value || '').toUpperCase().trim();
+  if (!v) return;
+  const criptos = cargarCriptos();
+  if (criptos.includes(v)) { alert('Ya existe'); return; }
+  criptos.push(v); guardarCriptos(criptos);
+  cerrarModal(); setCriptoActiva(v);
+}
+function borrarCripto(c) {
+  if (c === 'USDT') { alert('USDT no se puede borrar'); return; }
+  if (!confirm('¿Borrar ' + c + '? También se borrarán sus operaciones.')) return;
+  const criptos = cargarCriptos().filter(x => x !== c); guardarCriptos(criptos);
+  const allState = cargarStateRaw(); delete allState[c]; guardarStateRaw(allState);
+  if (criptoActiva === c) setCriptoActiva(criptos[0] || 'USDT'); else actualizar();
+}
+
+// === STATE MULTI-CRIPTO ===
+function cargarStateRaw() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; } }
+function guardarStateRaw(all) { localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); }
+function cargarState() {
+  const all = cargarStateRaw();
+  const s = all[criptoActiva] || {};
+  return { compras: s.compras || [], lotesCerrados: s.lotesCerrados || [] };
+}
+function guardarState(s) { const all = cargarStateRaw(); all[criptoActiva] = s; guardarStateRaw(all); }
+
+// === UTILS ===
+function fmtCOP(n) { const cfg = cargarConfig(); const moneda = cfg.moneda || 'COP'; try { return new Intl.NumberFormat('es-CO', {style:'currency', currency:moneda, maximumFractionDigits:0}).format(n); } catch { return moneda + ' ' + new Intl.NumberFormat('es-CO', {maximumFractionDigits:0}).format(n); } }
+function fmtNum(n, dec=2) { return new Intl.NumberFormat('es-CO', {maximumFractionDigits:dec}).format(n); }
+function fmtCripto(n) { return fmtNum(n, 8).replace(/0+$/,'').replace(/\.$/,''); }
+function fechaLocal(d = new Date()) { const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const dd = String(d.getDate()).padStart(2,'0'); return y + '-' + m + '-' + dd; }
+function lunesDeSemana(d = new Date()) { const dow = d.getDay(); const diff = dow === 0 ? -6 : 1 - dow; const lun = new Date(d); lun.setDate(d.getDate() + diff); lun.setHours(0,0,0,0); return lun; }
+function calcLote(compras) { const usdt = compras.reduce((s,c) => s + c.cantidad, 0); const invCompra = compras.reduce((s,c) => s + c.cantidad * c.precio, 0); const binance = compras.reduce((s,c) => s + (c.binance || 0), 0); const invTotal = invCompra + binance; const promedio = usdt > 0 ? invCompra / usdt : 0; const costoUnit = usdt > 0 ? invTotal / usdt : 0; return { usdt, invCompra, binance, invTotal, promedio, costoUnit }; }
+function calcPrecioMinimo(usdt, invTotal, rentMin, tasa) { if (usdt <= 0) return 0; return (invTotal * (1 + rentMin/100)) / (usdt * (1 - tasa)); }
+function calcVenta(usdtVendido, precioVenta, costoLote, tasa4x1000) { const ingresoBruto = usdtVendido * precioVenta; const impuesto = ingresoBruto * tasa4x1000; const ingresoNeto = ingresoBruto - impuesto; const ganancia = ingresoNeto - costoLote; const rent = costoLote > 0 ? (ganancia / costoLote) * 100 : 0; return { ingresoBruto, impuesto, ingresoNeto, ganancia, rent }; }
+
+function actualizar() {
+  const cfg = cargarConfig();
+  document.getElementById('cfg-rent').value = cfg.rentMin;
+  document.getElementById('cfg-4x1000').value = cfg.tasa4x1000;
+  document.getElementById('cfg-comision-default').value = cfg.comisionDefault;
+  document.getElementById('cfg-moneda').value = cfg.moneda;
+  document.getElementById('meta-rent-display').textContent = cfg.rentMin + '%';
+  document.getElementById('lote-cripto-label').textContent = criptoActiva;
+  renderCryptoSelector();
+  renderListaCriptos();
+  const s = cargarState();
+  renderLoteActual(s.compras, cfg);
+  renderHistorial(s.lotesCerrados);
+  renderDias(s.lotesCerrados);
+  renderGrafica(s.lotesCerrados);
+  renderResumenTotal(s.lotesCerrados);
+  renderResumenExchanges(s.lotesCerrados);
+  renderKPIs(s.lotesCerrados);
+}
+
+function renderCryptoSelector() {
+  const sel = document.getElementById('crypto-selector');
+  const criptos = cargarCriptos();
+  sel.innerHTML = criptos.map(c => '<div class="crypto-chip ' + (c === criptoActiva ? 'active' : '') + '" onclick="setCriptoActiva(\'' + c + '\')">' + c + '</div>').join('') + '<div class="crypto-chip add" onclick="abrirModalCripto()">+ Agregar</div>';
+}
+
+function renderListaCriptos() {
+  const el = document.getElementById('lista-criptos');
+  const criptos = cargarCriptos();
+  el.innerHTML = criptos.map(c => '<div class="config-row"><label>' + c + (c === 'USDT' ? ' (predeterminada)' : '') + '</label>' + (c !== 'USDT' ? '<button class="danger" style="width:auto;padding:6px 12px;font-size:12px;margin:0" onclick="borrarCripto(\'' + c + '\')">Borrar</button>' : '<span class="text-3"></span>') + '</div>').join('');
+}
+
+function renderLoteActual(compras, cfg) {
+  const lote = calcLote(compras);
+  const ahora = new Date();
+  document.getElementById('lote-fecha').textContent = compras.length ? DIAS_CORTOS[ahora.getDay()] + ' ' + ahora.toLocaleDateString('es-CO', {day:'2-digit', month:'short'}) : criptoActiva;
+  document.getElementById('lote-num').textContent = compras.length;
+  document.getElementById('lote-usdt').textContent = fmtCripto(lote.usdt);
+  document.getElementById('lote-inv').textContent = fmtCOP(lote.invTotal);
+  document.getElementById('lote-promedio').textContent = lote.promedio > 0 ? fmtCOP(lote.promedio) : '—';
+  document.getElementById('lote-binance').textContent = fmtCOP(lote.binance);
+  document.getElementById('lote-costo-unit').textContent = lote.costoUnit > 0 ? fmtCOP(lote.costoUnit) : '—';
+  if (lote.usdt > 0) {
+    const pmin = calcPrecioMinimo(lote.usdt, lote.invTotal, cfg.rentMin, cfg.tasa4x1000);
+    document.getElementById('lote-precio-min').textContent = fmtCOP(pmin);
+    const imp = lote.usdt * pmin * cfg.tasa4x1000;
+    document.getElementById('lote-com-binance').textContent = fmtCOP(lote.binance);
+    document.getElementById('lote-com-4x1000').textContent = fmtCOP(imp);
+    document.getElementById('lote-com-total').textContent = fmtCOP(lote.binance + imp);
+  } else {
+    document.getElementById('lote-precio-min').textContent = '—';
+    document.getElementById('lote-com-binance').textContent = fmtCOP(0);
+    document.getElementById('lote-com-4x1000').textContent = fmtCOP(0);
+    document.getElementById('lote-com-total').textContent = fmtCOP(0);
+  }
+  const list = document.getElementById('compras-list');
+  document.getElementById('lote-count-badge').textContent = compras.length;
+  if (!compras.length) { list.innerHTML = '<div class="empty">Sin compras aún</div>'; }
+  else {
+    // Ordenar por fecha real (más reciente arriba)
+    list.innerHTML = [...compras].sort((a,b) => new Date(b.fecha) - new Date(a.fecha)).map(c => {
+      const f = new Date(c.fecha);
+      const fechaTxt = f.toLocaleDateString('es-CO', {day:'2-digit', month:'short'}) + ' ' + f.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+      const exTag = c.exchange ? '<span class="tag-exchange">' + c.exchange + '</span>' : '';
+      return '<div class="compra-item"><div><div class="compra-main">' + fmtCripto(c.cantidad) + ' ' + criptoActiva + ' · ' + fmtCOP(c.precio) + exTag + '</div><div class="compra-detail">' + fechaTxt + (c.nota ? ' · ' + c.nota : '') + ' · Comisión: ' + fmtCOP(c.binance || 0) + ' · Total: ' + fmtCOP(c.cantidad * c.precio + (c.binance || 0)) + '</div></div><div class="compra-actions"><a onclick="borrarCompra(' + c.id + ')">borrar</a></div></div>';
+    }).join('');
+  }
+  document.getElementById('btn-cerrar').disabled = compras.length === 0;
+  previewVenta();
+}
+
+function previewVenta() {
+  const cfg = cargarConfig();
+  const s = cargarState();
+  const lote = calcLote(s.compras);
+  const precioVenta = parseFloat(document.getElementById('v-precio').value);
+  const cantInput = parseFloat(document.getElementById('v-cantidad').value);
+  const cantidad = (!cantInput || cantInput > lote.usdt) ? lote.usdt : cantInput;
+  const prev = document.getElementById('venta-preview');
+  if (!precioVenta || lote.usdt <= 0) { prev.innerHTML = ''; return; }
+  const factor = cantidad / lote.usdt;
+  const invCompraProp = lote.invCompra * factor;
+  const binanceProp = lote.binance * factor;
+  const costoProp = invCompraProp + binanceProp;
+  const r = calcVenta(cantidad, precioVenta, costoProp, cfg.tasa4x1000);
+  let claseAlerta = 'alerta-rent'; let txt = '';
+  if (r.rent >= cfg.rentMin) { claseAlerta += ' ok'; txt = '✓ Llegas al objetivo de ' + cfg.rentMin + '%'; }
+  else if (r.rent >= 0) { txt = '⚠ Por debajo del objetivo (' + cfg.rentMin + '%)'; }
+  else { claseAlerta += ' bad'; txt = '✗ Pérdida'; }
+  const gananciaBruta = r.ingresoBruto - invCompraProp;
+  prev.innerHTML = '<div class="' + claseAlerta + '"><b>' + txt + '</b><div class="text" style="margin-top:8px">Vendes: ' + fmtCripto(cantidad) + ' ' + criptoActiva + ' @ ' + fmtCOP(precioVenta) + '<br>Ingreso bruto: ' + fmtCOP(r.ingresoBruto) + '<br>Costo: ' + fmtCOP(invCompraProp) + '<br>Ganancia antes de comisiones: <b style="color:var(--text)">' + fmtCOP(gananciaBruta) + '</b></div><div style="border-top:1px dashed rgba(255,255,255,0.15);margin:10px 0;padding-top:8px"><div class="text" style="font-weight:600;color:var(--text-2);margin-bottom:4px">Comisiones a descontar:</div><div class="text">• Exchange: <b style="color:var(--red)">− ' + fmtCOP(binanceProp) + '</b></div><div class="text">• Impuesto venta: <b style="color:var(--red)">− ' + fmtCOP(r.impuesto) + '</b></div><div class="text"><b style="color:var(--red)">Total: − ' + fmtCOP(binanceProp + r.impuesto) + '</b></div></div><div class="neta">Ganancia neta: ' + fmtCOP(r.ganancia) + ' (' + r.rent.toFixed(2) + '%)</div></div>';
+}
+
+function agregarCompra() {
+  const cantidad = parseFloat(document.getElementById('c-cantidad').value);
+  const precio = parseFloat(document.getElementById('c-precio').value);
+  const binanceRaw = parseFloat(document.getElementById('c-binance').value) || 0;
+  const unit = document.getElementById('c-binance-unit').value;
+  const binance = unit === 'USDT' ? binanceRaw * precio : binanceRaw;
+  const nota = document.getElementById('c-nota').value.trim();
+  const exchange = document.getElementById('c-exchange').value.trim();
+  if (!cantidad || !precio) { alert('Completa cantidad y precio'); return; }
+  const s = cargarState();
+  s.compras.push({ id: Date.now() + Math.random(), fecha: new Date().toISOString(), cantidad, precio, binance, nota, exchange, binanceOriginal: binanceRaw, binanceUnit: unit });
+  guardarState(s);
+  ['c-cantidad','c-precio','c-binance','c-nota'].forEach(id => document.getElementById(id).value = id === 'c-binance' ? '0' : '');
+  actualizar();
+}
+
+function borrarCompra(id) { if (!confirm('¿Borrar esta compra?')) return; const s = cargarState(); s.compras = s.compras.filter(c => c.id !== id); guardarState(s); actualizar(); }
+
+function cerrarLote() {
+  const cfg = cargarConfig();
+  const s = cargarState();
+  if (!s.compras.length) { alert('No hay compras'); return; }
+  const precioVenta = parseFloat(document.getElementById('v-precio').value);
+  if (!precioVenta) { alert('Ingresa el precio de venta'); return; }
+  const lote = calcLote(s.compras);
+  const cantInput = parseFloat(document.getElementById('v-cantidad').value);
+  const usdtVendido = (!cantInput || cantInput > lote.usdt) ? lote.usdt : cantInput;
+  const ventaParcial = usdtVendido < lote.usdt;
+  const factorV = usdtVendido / lote.usdt;
+  const invCompraProp = lote.invCompra * factorV;
+  const binanceProp = lote.binance * factorV;
+  const costoProp = invCompraProp + binanceProp;
+  const r = calcVenta(usdtVendido, precioVenta, costoProp, cfg.tasa4x1000);
+  if (!confirm('Cerrar lote:\n' + fmtCripto(usdtVendido) + ' ' + criptoActiva + ' @ ' + fmtCOP(precioVenta) + '\nGanancia: ' + fmtCOP(r.ganancia) + ' (' + r.rent.toFixed(2) + '%)')) return;
+  const ahora = new Date();
+  const exchanges = [...new Set(s.compras.map(c => c.exchange).filter(Boolean))];
+  s.lotesCerrados.push({ id: Date.now(), fecha: ahora.toISOString(), fechaLocal: fechaLocal(ahora), compras: s.compras.map(c => ({...c})), usdtTotal: lote.usdt, usdtVendido, precioPromedio: lote.promedio, precioVenta, invTotal: costoProp, binance: binanceProp, impuesto4x1000: r.impuesto, ingresoBruto: r.ingresoBruto, ingresoNeto: r.ingresoNeto, ganancia: r.ganancia, rentabilidad: r.rent, parcial: ventaParcial, exchanges, cripto: criptoActiva });
+  if (ventaParcial) { const factor = (lote.usdt - usdtVendido) / lote.usdt; s.compras = s.compras.map(c => ({ ...c, cantidad: c.cantidad * factor, binance: (c.binance || 0) * factor })); }
+  else { s.compras = []; }
+  guardarState(s);
+  document.getElementById('v-precio').value = ''; document.getElementById('v-cantidad').value = '';
+  actualizar();
+  alert('Lote cerrado: ' + fmtCOP(r.ganancia));
+}
+
+function cancelarLote() { const s = cargarState(); if (!s.compras.length) return; if (!confirm('¿Descartar todas las compras?')) return; s.compras = []; guardarState(s); actualizar(); }
+
+function renderKPIs(lotes) {
+  const hoy = fechaLocal(); const mes = hoy.slice(0,7); const lun = fechaLocal(lunesDeSemana());
+  const lotesHoy = lotes.filter(l => l.fechaLocal === hoy);
+  const lotesMes = lotes.filter(l => l.fechaLocal.slice(0,7) === mes);
+  const lotesSem = lotes.filter(l => l.fechaLocal >= lun && l.fechaLocal <= hoy);
+  setKPI('kpi-today', lotesHoy.reduce((s,l)=>s+l.ganancia,0), lotesHoy.length + ' lotes');
+  setKPI('kpi-week', lotesSem.reduce((s,l)=>s+l.ganancia,0), lotesSem.length + ' lotes');
+  setKPI('kpi-month', lotesMes.reduce((s,l)=>s+l.ganancia,0), lotesMes.length + ' lotes');
+  const rentProm = lotes.length ? lotes.reduce((s,l)=>s+l.rentabilidad,0) / lotes.length : 0;
+  const el = document.getElementById('kpi-rent');
+  el.textContent = rentProm.toFixed(2) + '%';
+  el.className = 'kpi-value ' + (rentProm >= 0 ? 'green' : 'red');
+}
+
+function setKPI(id, valor, sub) { const el = document.getElementById(id); el.textContent = fmtCOP(valor); el.className = 'kpi-value ' + (valor >= 0 ? 'green' : 'red'); document.getElementById(id + '-ops').textContent = sub; }
+
+function renderHistorial(lotes) { const list = document.getElementById('historial-list'); if (!lotes.length) { list.innerHTML = '<div class="empty">Sin lotes cerrados aún</div>'; return; } list.innerHTML = [...lotes].sort((a,b)=>b.id-a.id).map(loteCardHTML).join(''); }
+
+function loteCardHTML(l) {
+  const f = new Date(l.fecha);
+  const fechaTxt = DIAS_CORTOS[f.getDay()] + ' ' + f.toLocaleDateString('es-CO',{day:'2-digit',month:'short'}) + ' ' + f.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+  const negCls = l.ganancia < 0 ? ' neg' : '';
+  const exTags = (l.exchanges || []).map(e => '<span class="tag-exchange">' + e + '</span>').join('');
+  return '<div class="lote-cerrado' + negCls + '"><div class="header"><span>' + fechaTxt + (l.parcial ? ' · parcial' : '') + exTags + '</span><span class="gan' + negCls + '">' + fmtCOP(l.ganancia) + ' · ' + l.rentabilidad.toFixed(2) + '%</span></div><div class="det"><b>' + fmtCripto(l.usdtVendido) + ' ' + (l.cripto || 'USDT') + '</b> · Compra prom: ' + fmtCOP(l.precioPromedio) + ' → Venta: ' + fmtCOP(l.precioVenta) + '<br>Inversión: ' + fmtCOP(l.invTotal) + ' · ' + l.compras.length + ' compras<br><b>Comisiones:</b> Exchange ' + fmtCOP(l.binance) + ' · Impuesto ' + fmtCOP(l.impuesto4x1000) + ' · Total ' + fmtCOP(l.binance + l.impuesto4x1000) + '</div><div style="text-align:right;margin-top:6px"><a class="borrar" onclick="borrarLote(' + l.id + ')">borrar</a></div></div>';
+}
+
+function borrarLote(id) { if (!confirm('¿Borrar este lote?')) return; const s = cargarState(); s.lotesCerrados = s.lotesCerrados.filter(l => l.id !== id); guardarState(s); actualizar(); }
+
+function renderDias(lotes) {
+  const lun = lunesDeSemana(); const sab = new Date(lun); sab.setDate(lun.getDate() + 5);
+  document.getElementById('semana-label').textContent = lun.toLocaleDateString('es-CO',{day:'2-digit',month:'short'}) + ' - ' + sab.toLocaleDateString('es-CO',{day:'2-digit',month:'short'});
+  const tabsEl = document.getElementById('dia-tabs'); tabsEl.innerHTML = '';
+  const hoyStr = fechaLocal();
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(lun); d.setDate(lun.getDate() + i);
+    const dStr = fechaLocal(d);
+    const lotesDia = lotes.filter(l => l.fechaLocal === dStr);
+    const gan = lotesDia.reduce((s,l) => s + l.ganancia, 0);
+    const btn = document.createElement('button');
+    btn.className = 'dia-btn';
+    if (diaSeleccionado === dStr || (!diaSeleccionado && dStr === hoyStr)) btn.classList.add('active');
+    btn.innerHTML = DIAS_CORTOS[d.getDay()] + ' ' + d.getDate() + '<small>' + (lotesDia.length ? fmtCOP(gan) : '—') + '</small>';
+    btn.onclick = () => { diaSeleccionado = dStr; renderDias(lotes); };
+    tabsEl.appendChild(btn);
+  }
+  const sel = diaSeleccionado || hoyStr;
+  const lotesSel = lotes.filter(l => l.fechaLocal === sel);
+  const fechaObj = new Date(sel + 'T00:00:00');
+  const totUsdt = lotesSel.reduce((s,l) => s + l.usdtVendido, 0);
+  const totInv = lotesSel.reduce((s,l) => s + l.invTotal, 0);
+  const totBin = lotesSel.reduce((s,l) => s + l.binance, 0);
+  const totImp = lotesSel.reduce((s,l) => s + l.impuesto4x1000, 0);
+  const totGan = lotesSel.reduce((s,l) => s + l.ganancia, 0);
+  const rent = totInv > 0 ? (totGan / totInv) * 100 : 0;
+  const resEl = document.getElementById('dia-resumen');
+  if (!lotesSel.length) { resEl.innerHTML = '<div class="empty">' + DIAS[fechaObj.getDay()] + ' · Sin lotes</div>'; }
+  else { resEl.innerHTML = '<div class="dia-resumen-row"><span><b>' + DIAS[fechaObj.getDay()] + ' ' + fechaObj.toLocaleDateString('es-CO',{day:'2-digit',month:'short'}) + '</b></span><span>' + lotesSel.length + ' lotes</span></div><div class="dia-resumen-row"><span>Cantidad operada</span><b>' + fmtCripto(totUsdt) + ' ' + criptoActiva + '</b></div><div class="dia-resumen-row"><span>Inversión</span><b>' + fmtCOP(totInv) + '</b></div><div class="dia-resumen-row"><span>Comisión exchange</span><b>' + fmtCOP(totBin) + '</b></div><div class="dia-resumen-row"><span>Impuesto venta</span><b>' + fmtCOP(totImp) + '</b></div><div class="dia-resumen-row total"><span><b>Ganancia neta</b></span><b style="color:' + (totGan>=0?'var(--green)':'var(--red)') + '">' + fmtCOP(totGan) + ' (' + rent.toFixed(2) + '%)</b></div>'; }
+  document.getElementById('dia-lotes').innerHTML = lotesSel.length ? [...lotesSel].sort((a,b)=>b.id-a.id).map(loteCardHTML).join('') : '';
+}
+
+function renderGrafica(lotes) {
+  const ctx = document.getElementById('chart-semana');
+  if (!ctx || typeof Chart === 'undefined') return;
+  const lun = lunesDeSemana();
+  const labels = []; const data = [];
+  for (let i = 0; i < 6; i++) { const d = new Date(lun); d.setDate(lun.getDate() + i); const dStr = fechaLocal(d); labels.push(DIAS_CORTOS[d.getDay()] + ' ' + d.getDate()); const gan = lotes.filter(l => l.fechaLocal === dStr).reduce((s,l) => s + l.ganancia, 0); data.push(Math.round(gan)); }
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Ganancia', data, backgroundColor: data.map(v => v>=0?'#02c076':'#f6465d'), borderRadius: 6, borderSkipped: false }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1e2329', titleColor: '#eaecef', bodyColor: '#b7bdc6', borderColor: '#2b3139', borderWidth: 1 } }, scales: { x: { grid: { display: false }, ticks: { color: '#848e9c', font: { size: 11 } } }, y: { grid: { color: '#2b3139' }, ticks: { color: '#848e9c', font: { size: 11 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' } } } }
+  });
+}
+
+function renderResumenTotal(lotes) {
+  const el = document.getElementById('resumen-total');
+  if (!lotes.length) { el.innerHTML = '<div class="empty">Sin lotes</div>'; return; }
+  const totalGan = lotes.reduce((s,l) => s + l.ganancia, 0);
+  const totalInv = lotes.reduce((s,l) => s + l.invTotal, 0);
+  const totalUSDT = lotes.reduce((s,l) => s + l.usdtVendido, 0);
+  const totalImp = lotes.reduce((s,l) => s + l.impuesto4x1000, 0);
+  const totalBin = lotes.reduce((s,l) => s + l.binance, 0);
+  const rentTotal = totalInv > 0 ? (totalGan / totalInv) * 100 : 0;
+  const mejor = lotes.reduce((m,l) => l.ganancia > m.ganancia ? l : m, lotes[0]);
+  el.innerHTML = '<b>Lotes cerrados:</b> ' + lotes.length + '<br><b>' + criptoActiva + ' operados:</b> ' + fmtCripto(totalUSDT) + '<br><b>Inversión total:</b> ' + fmtCOP(totalInv) + '<br><b>Pagado en impuestos:</b> ' + fmtCOP(totalImp) + '<br><b>Pagado en comisiones exchange:</b> ' + fmtCOP(totalBin) + '<br><b>Ganancia neta total:</b> <span style="color:' + (totalGan>=0?'var(--green)':'var(--red)') + ';font-weight:700">' + fmtCOP(totalGan) + '</span><br><b>Rentabilidad global:</b> ' + rentTotal.toFixed(2) + '%<br><b>Mejor lote:</b> ' + fmtCOP(mejor.ganancia);
+}
+
+function renderResumenExchanges(lotes) {
+  const el = document.getElementById('resumen-exchanges');
+  if (!lotes.length) { el.innerHTML = '<div class="empty">Sin datos</div>'; return; }
+  // Agrupar por exchange (sumar todos los exchanges del lote, dividir ganancia proporcionalmente no es exacto, así que contamos por presencia)
+  const stats = {};
+  lotes.forEach(l => {
+    const exs = l.exchanges && l.exchanges.length ? l.exchanges : ['Sin especificar'];
+    exs.forEach(ex => {
+      if (!stats[ex]) stats[ex] = { lotes: 0, ganancia: 0, inversion: 0 };
+      stats[ex].lotes++;
+      stats[ex].ganancia += l.ganancia / exs.length;
+      stats[ex].inversion += l.invTotal / exs.length;
+    });
+  });
+  const sorted = Object.entries(stats).sort((a,b) => b[1].ganancia - a[1].ganancia);
+  el.innerHTML = sorted.map(([ex, st]) => {
+    const rent = st.inversion > 0 ? (st.ganancia / st.inversion) * 100 : 0;
+    return '<div class="dia-resumen-row"><span><b>' + ex + '</b> <span class="kpi-sub" style="margin-left:6px">' + st.lotes + ' lotes</span></span><b style="color:' + (st.ganancia>=0?'var(--green)':'var(--red)') + '">' + fmtCOP(st.ganancia) + ' · ' + rent.toFixed(2) + '%</b></div>';
+  }).join('');
+}
+
+// === BACKUP / IMPORT ===
+function exportarBackup() { const data = { state: cargarStateRaw(), config: cargarConfig(), criptos: cargarCriptos(), exportedAt: new Date().toISOString() }; const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'p2p-backup-' + fechaLocal() + '.json'; a.click(); }
+function importarBackup(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const data = JSON.parse(e.target.result); if (!confirm('¿Restaurar backup? Reemplaza los datos actuales.')) return; if (data.state) localStorage.setItem(STORAGE_KEY, JSON.stringify(data.state)); if (data.config) localStorage.setItem(CONFIG_KEY, JSON.stringify(data.config)); if (data.criptos) localStorage.setItem(CRIPTOS_KEY, JSON.stringify(data.criptos)); cargarCriptoActiva(); actualizar(); alert('Backup restaurado'); } catch (err) { alert('Archivo no válido'); } }; reader.readAsText(file); event.target.value = ''; }
+function exportarCSV() { const s = cargarState(); if (!s.lotesCerrados.length) { alert('Sin lotes'); return; } const headers = 'Fecha,Día,Cripto,Cantidad,Precio Promedio,Precio Venta,Inversión,Impuesto,Comisión Exchange,Ingreso Bruto,Ingreso Neto,Ganancia,Rentabilidad %,Exchanges'; const rows = s.lotesCerrados.map(l => { const f = new Date(l.fecha); return [l.fecha, DIAS[f.getDay()], l.cripto || criptoActiva, l.usdtVendido, l.precioPromedio, l.precioVenta, l.invTotal, l.impuesto4x1000, l.binance, l.ingresoBruto, l.ingresoNeto, l.ganancia, l.rentabilidad.toFixed(2), (l.exchanges||[]).join(' | ')].join(','); }); const csv = headers + '\n' + rows.join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'p2p-' + criptoActiva + '-' + fechaLocal() + '.csv'; a.click(); }
+function resetearTodo() { if (!confirm('¿Borrar TODO de ' + criptoActiva + '?')) return; const all = cargarStateRaw(); delete all[criptoActiva]; guardarStateRaw(all); actualizar(); }
+
+// === IMPORTACIÓN CSV BINANCE P2P ===
+function importarCSVBinance(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const filas = parseCSV(e.target.result);
+      if (filas.length < 2) { alert('CSV vacío o inválido'); return; }
+      const headers = filas[0].map(h => h.toString().toLowerCase().trim());
+      const rows = filas.slice(1).filter(r => r.length > 1);
+      const idxTipo = findCol(headers, ['tipo de orden','order type','trade type','side']);
+      const idxCantidad = findCol(headers, ['cantidad','quantity','asset amount','crypto amount']);
+      const idxPrecio = findCol(headers, ['precio','price','unit price']);
+      const idxPrecioTotal = findCol(headers, ['precio total','total price']);
+      const idxEstado = findCol(headers, ['estado','status']);
+      const idxFecha = findCol(headers, ['hora de creación','hora de creacion','created time','order time','fecha','time','date']);
+      const idxOrden = findCol(headers, ['número de pedido','numero de pedido','order number','order id']);
+      const idxAsset = findCol(headers, ['activo','asset','crypto','coin']);
+      const idxTarifaCreador = findCol(headers, ['tarifa de creador','maker fee']);
+      const idxComisionTomador = findCol(headers, ['comisión de tomador','comision de tomador','taker fee']);
+      if (idxCantidad < 0 || idxPrecio < 0) { alert('No se detectaron columnas. Verifica que sea el CSV de Binance P2P.'); return; }
+      let importadas = 0, omitidas = 0;
+      const cfg = cargarConfig();
+      const allState = cargarStateRaw();
+      const idsExistentes = new Set(Object.values(allState).flatMap(s => [...(s.compras||[]), ...(s.lotesCerrados||[]).flatMap(l => l.compras || [])]).map(c => c.refOrden).filter(Boolean));
+      rows.forEach(row => {
+        const tipo = (idxTipo >= 0 ? String(row[idxTipo] || '') : '').toLowerCase();
+        const estado = (idxEstado >= 0 ? String(row[idxEstado] || '') : '').toLowerCase();
+        const refOrden = idxOrden >= 0 ? String(row[idxOrden] || '').trim() : null;
+        const asset = idxAsset >= 0 ? String(row[idxAsset] || '').toUpperCase().trim() : criptoActiva;
+        const esCompra = tipo.includes('buy') || tipo.includes('compra');
+        const completado = !estado || estado.includes('complet') || estado.includes('finaliz') || estado.includes('paid') || estado.includes('exitos');
+        if (!esCompra || (estado && !completado)) { omitidas++; return; }
+        if (refOrden && idsExistentes.has(refOrden)) { omitidas++; return; }
+        const cantidad = parseNum(row[idxCantidad]);
+        const precio = parseNum(row[idxPrecio]);
+        if (!cantidad || !precio) { omitidas++; return; }
+        const criptos = cargarCriptos();
+        if (asset && !criptos.includes(asset)) { criptos.push(asset); guardarCriptos(criptos); }
+        const criptoDestino = asset || criptoActiva;
+        if (!allState[criptoDestino]) allState[criptoDestino] = { compras: [], lotesCerrados: [] };
+        // Comisión: del CSV (creador o tomador, en USDT) → convertir a fiat
+        const tarifaCreador = idxTarifaCreador >= 0 ? parseNum(row[idxTarifaCreador]) : 0;
+        const comisionTomador = idxComisionTomador >= 0 ? parseNum(row[idxComisionTomador]) : 0;
+        const comisionUSDT = tarifaCreador + comisionTomador;
+        let binance = 0;
+        if (comisionUSDT > 0) binance = comisionUSDT * precio;
+        else if (cfg.comisionDefault > 0) binance = cantidad * precio * cfg.comisionDefault / 100;
+        const fechaIso = (idxFecha >= 0 ? parsearFecha(row[idxFecha]) : null) || new Date().toISOString();
+        allState[criptoDestino].compras.push({
+          id: Date.now() + Math.random(),
+          fecha: fechaIso, cantidad, precio, binance,
+          nota: refOrden ? 'Orden ' + refOrden.slice(0,12) : 'Importado',
+          exchange: 'Binance',
+          refOrden, binanceUnit: 'COP', importado: true,
+          comisionUSDT
+        });
+        importadas++;
+      });
+      guardarStateRaw(allState);
+      actualizar();
+      alert('✓ ' + importadas + ' compras importadas\n✗ ' + omitidas + ' omitidas');
+    } catch (err) { console.error(err); alert('Error: ' + err.message); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function parseCSV(texto) {
+  const filas = []; const lineas = texto.split(/\r?\n/);
+  for (const linea of lineas) {
+    if (!linea.trim()) continue;
+    const campos = []; let actual = ''; let dq = false;
+    for (let i = 0; i < linea.length; i++) {
+      const ch = linea[i];
+      if (ch === '"') dq = !dq;
+      else if (ch === ',' && !dq) { campos.push(actual); actual = ''; }
+      else actual += ch;
+    }
+    campos.push(actual);
+    filas.push(campos.map(c => c.trim()));
+  }
+  return filas;
+}
+
+function findCol(headers, opciones) { for (let i = 0; i < headers.length; i++) for (const op of opciones) if (headers[i].includes(op.toLowerCase())) return i; return -1; }
+function parseNum(v) { if (v === null || v === undefined) return 0; const s = String(v).replace(/[^\d.,\-]/g, '').replace(/,/g, ''); return parseFloat(s) || 0; }
+function parsearFecha(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  // Formato Binance "YY-MM-DD HH:mm:ss" (ej: 26-05-15 00:43:01)
+  let m = s.match(/^(\d{2})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/);
+  if (m) { const yy = parseInt(m[1]); const year = yy < 70 ? 2000 + yy : 1900 + yy; return new Date(year, m[2]-1, m[3], m[4], m[5], m[6]).toISOString(); }
+  // Formato "YYYY-MM-DD HH:mm:ss"
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+  if (m) return new Date(m[1], m[2]-1, m[3], m[4], m[5], m[6]).toISOString();
+  // Fallback
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.toISOString();
+  return null;
+}
+
+// === NAVEGACIÓN ===
+document.querySelectorAll('.nav-item').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(x => x.style.display = 'none');
+    document.getElementById('tab-' + t.dataset.tab).style.display = 'block';
+    if (t.dataset.tab === 'grafica') renderGrafica(cargarState().lotesCerrados);
+    if (t.dataset.tab === 'dias') { diaSeleccionado = null; renderDias(cargarState().lotesCerrados); }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+});
+
+document.getElementById('modal-cripto').addEventListener('click', (e) => { if (e.target.id === 'modal-cripto') cerrarModal(); });
+
+cargarCriptoActiva();
+actualizar();
+</script>
+</body>
+</html>
