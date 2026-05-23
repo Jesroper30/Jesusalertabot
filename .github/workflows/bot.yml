@@ -7,8 +7,10 @@ name: Bot Alertas P2P USDT
 # Ventana UTC: 11:00 - 05:59 (cruza medianoche UTC).
 on:
   schedule:
-    - cron: '*/5 11-23 * * *'  # 11:00–23:59 UTC = 6:00 AM – 6:59 PM Colombia
-    - cron: '*/5 0-5 * * *'    # 00:00–05:59 UTC = 7:00 PM – 0:59 AM Colombia
+    # OJO: usamos minutos "raros" (3, 8, 13, 18, ..., 58) en vez de */5 (0, 5, 10, ...)
+    # porque GitHub satura los slots redondos y demora / se salta corridas.
+    - cron: '3-59/5 11-23 * * *'  # cada 5 min en hours 11–23 UTC = 6 AM–6:59 PM Col
+    - cron: '3-59/5 0-5 * * *'    # cada 5 min en hours 0–5 UTC  = 7 PM–0:59 AM Col
   workflow_dispatch:  # Permite correrlo manualmente desde la UI de GitHub
 
 # Si una corrida toma más de 5 min y se solapa con la siguiente, espera (no corre en paralelo).
